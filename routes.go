@@ -9,4 +9,5 @@ func registerRoutes(app *gin.Engine) {
 	crud := controllers.NewCrud()
 	app.POST("/url", crud.CreateShortUrl)
 	app.GET("/url/:urlSlug", crud.RedirectToFullUrl)
+	app.DELETE("/url/:urlSlug", crud.DeleteUrl)
 }

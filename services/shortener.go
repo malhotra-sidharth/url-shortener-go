@@ -14,6 +14,7 @@ import (
 type IShortener interface {
 	Create(url string) (*string, error)
 	ResolveUrl(id string) (*models.UrlRecord, error)
+	DeleteUrl(id string) (*int64, error)
 }
 
 type shortener struct {
@@ -102,4 +103,13 @@ func (shortener *shortener) ResolveUrl(id string) (*models.UrlRecord, error) {
 	}
 
 	return nil, errors.New("Record Not Found")
+}
+
+func (shortener *shortener) DeleteUrl(id string) (*int64, error) {
+	byteId, err := hex.DecodeString(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return shortener.db.DeleteOneById(byteId)
 }

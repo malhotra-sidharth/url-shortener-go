@@ -14,6 +14,7 @@ type IDbOperations interface {
 	InsertOne(document *models.UrlRecord) (interface{}, error)
 	FindOneById(id []byte) (*models.UrlRecord, error)
 	UpdatedOneById(id []byte, update bson.D) (*int64, error)
+	DeleteOneById(id []byte) (*int64, error)
 }
 
 type db struct {
@@ -60,4 +61,15 @@ func (db *db) UpdatedOneById(id []byte, update bson.D) (*int64, error) {
 	}
 
 	return &updatedRecord.ModifiedCount, nil
+}
+
+func (db *db) DeleteOneById(id []byte) (*int64, error) {
+	filter := bson.D{{"_id", id}}
+	result, err := urlsCollection.DeleteOne(context.TODO(), filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &result.DeletedCount, nil
 }
