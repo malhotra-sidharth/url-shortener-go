@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 
 type ICRUD interface {
 	CreateShortUrl(ctx *gin.Context)
+	RedirectToFullUrl(ctx *gin.Context)
 }
 
 type crud struct{}
@@ -63,4 +65,25 @@ func (crud *crud) CreateShortUrl(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, &gin.H{"fullUrl": payload.FullUrl, "id": id})
+}
+
+func (crud *crud) RedirectToFullUrl(ctx *gin.Context) {
+	id := ctx.Param("urlSlug")
+	if id == "" {
+		ctx.JSON(http.StatusNotFound, &gin.H{})
+		return
+	}
+
+	// find full URL
+	result, err := services.Container.Shortener.ResolveUrl(id)
+
+	if err != nil {
+		fmt.Println(err)
+		ctx.JSON(http.StatusNotFound, &gin.H{})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, &gin.H{
+		"result": result,
+	})
 }

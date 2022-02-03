@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"github.com/malhotra-sidharth/url-shortener-go/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type IShortener interface {
 	Create(url string) (*string, error)
+	ResolveUrl(id string) (*models.UrlRecord, error)
 }
 
 type shortener struct {
@@ -28,6 +30,11 @@ func generateId(val string) []byte {
 	sha := sha1.New()
 	sha.Write([]byte(val))
 	return sha.Sum(nil)
+}
+
+func isExpired(currentTime uint64, lastVisited uint64) bool {
+	secondsInYear := 31536000
+	return (currentTime-lastVisited >= uint64(secondsInYear))
 }
 
 func (shortener *shortener) Create(url string) (*string, error) {
@@ -51,4 +58,48 @@ func (shortener *shortener) Create(url string) (*string, error) {
 		return nil, insertionErr
 	}
 	return &document.IdString, nil
+}
+
+func (shortener *shortener) ResolveUrl(id string) (*models.UrlRecord, error) {
+	byteId, err := hex.DecodeString(id)
+	if err != nil {
+		return nil, err
+	}
+	record, err := shortener.db.FindOneById(byteId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	visited := uint64(time.Now().Unix())
+
+	if isExpired(visited, record.LastVisited) {
+		return nil, errors.New("Expired Url")
+	}
+
+	update := bson.D{
+		{
+			"$push", bson.D{
+				{"visited", visited},
+			},
+		},
+		{
+			"$set", bson.D{
+				{"lastVisited", visited},
+			},
+		},
+	}
+
+	updatedCount, updatedErr := shortener.db.UpdatedOneById(byteId, update)
+
+	if updatedErr != nil {
+		return nil, updatedErr
+	}
+
+	if *updatedCount > 0 {
+		record.Visited = nil
+		return record, nil
+	}
+
+	return nil, errors.New("Record Not Found")
 }
