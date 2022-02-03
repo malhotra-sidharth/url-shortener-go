@@ -14,6 +14,7 @@ import (
 )
 
 type ICRUD interface {
+	HelloWorld(ctx *gin.Context)
 	CreateShortUrl(ctx *gin.Context)
 	RedirectToFullUrl(ctx *gin.Context)
 	DeleteUrl(ctx *gin.Context)
@@ -50,6 +51,12 @@ func isUrlValid(input string) bool {
 	}
 
 	return true
+}
+
+func (crud *crud) HelloWorld(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, &gin.H{
+		"Hello": "World",
+	})
 }
 
 func (crud *crud) CreateShortUrl(ctx *gin.Context) {

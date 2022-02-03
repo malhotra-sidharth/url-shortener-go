@@ -8,6 +8,7 @@ import (
 
 func registerRoutes(app *gin.Engine, container *services.ServiceContainer) {
 	crud := controllers.NewCrud(container)
+	app.GET("/", crud.HelloWorld)
 	app.POST("/url", crud.CreateShortUrl)
 	app.GET("/url/:urlSlug", crud.RedirectToFullUrl)
 	app.DELETE("/url/:urlSlug", crud.DeleteUrl)
