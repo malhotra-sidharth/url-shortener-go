@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/malhotra-sidharth/url-shortener-go/models"
@@ -15,6 +16,7 @@ type IShortener interface {
 	Create(url string) (*string, error)
 	ResolveUrl(id string) (*models.UrlRecord, error)
 	DeleteUrl(id string) (*int64, error)
+	AccessCount(id string) (*models.Analytics, error)
 }
 
 type shortener struct {
@@ -36,6 +38,12 @@ func generateId(val string) []byte {
 func isExpired(currentTime uint64, lastVisited uint64) bool {
 	secondsInYear := 31536000
 	return (currentTime-lastVisited >= uint64(secondsInYear))
+}
+
+func sortUintSliceDesc(visited []uint64) {
+	sort.Slice(visited, func(i, j int) bool {
+		return visited[i] > visited[j]
+	})
 }
 
 func (shortener *shortener) Create(url string) (*string, error) {
@@ -112,4 +120,44 @@ func (shortener *shortener) DeleteUrl(id string) (*int64, error) {
 	}
 
 	return shortener.db.DeleteOneById(byteId)
+}
+
+func (shortener *shortener) AccessCount(id string) (*models.Analytics, error) {
+	byteId, err := hex.DecodeString(id)
+	if err != nil {
+		return nil, err
+	}
+	record, err := shortener.db.FindOneById(byteId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	currentTimestamp := time.Now().Unix()
+	timestampLastDay := currentTimestamp - 86400
+	timestampLastWeek := currentTimestamp - 604800
+
+	analytics := &models.Analytics{
+		Url:      *record,
+		LastDay:  0,
+		LastWeek: 0,
+		AllTime:  0,
+	}
+
+	sortUintSliceDesc(record.Visited)
+
+	for _, timestamp := range record.Visited {
+		if timestamp >= uint64(timestampLastDay) {
+			analytics.LastDay++
+			analytics.LastWeek++
+		} else if timestamp >= uint64(timestampLastWeek) {
+			analytics.LastWeek++
+		} else {
+			break
+		}
+	}
+
+	analytics.AllTime = uint64(len(record.Visited))
+	analytics.Url.Visited = nil
+	return analytics, nil
 }

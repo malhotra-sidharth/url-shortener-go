@@ -10,4 +10,5 @@ func registerRoutes(app *gin.Engine) {
 	app.POST("/url", crud.CreateShortUrl)
 	app.GET("/url/:urlSlug", crud.RedirectToFullUrl)
 	app.DELETE("/url/:urlSlug", crud.DeleteUrl)
+	app.GET("/url/:urlSlug/analytics", crud.GetAnalytics)
 }

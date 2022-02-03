@@ -17,6 +17,7 @@ type ICRUD interface {
 	CreateShortUrl(ctx *gin.Context)
 	RedirectToFullUrl(ctx *gin.Context)
 	DeleteUrl(ctx *gin.Context)
+	GetAnalytics(ctx *gin.Context)
 }
 
 type crud struct{}
@@ -106,4 +107,24 @@ func (crud *crud) DeleteUrl(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusNoContent, &gin.H{})
+}
+
+func (crud *crud) GetAnalytics(ctx *gin.Context) {
+	id := ctx.Param("urlSlug")
+	if id == "" {
+		ctx.JSON(http.StatusNotFound, &gin.H{})
+		return
+	}
+
+	analytics, err := services.Container.Shortener.AccessCount(id)
+
+	if err != nil {
+		fmt.Println(err)
+		ctx.JSON(http.StatusNotFound, &gin.H{})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, &gin.H{
+		"result": analytics,
+	})
 }
