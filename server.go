@@ -13,8 +13,8 @@ func main() {
 		AllowHeaders:    []string{"Content-Type"},
 		AllowMethods:    []string{"GET", "POST", "DELETE"},
 	}))
-	services.RegisterServiceContainer()
+	container := services.RegisterServiceContainer()
 	defer services.DbDisconnect()
-	registerRoutes(app)
+	registerRoutes(app, container)
 	app.Run()
 }

@@ -20,10 +20,14 @@ type ICRUD interface {
 	GetAnalytics(ctx *gin.Context)
 }
 
-type crud struct{}
+type crud struct {
+	container *services.ServiceContainer
+}
 
-func NewCrud() ICRUD {
-	return &crud{}
+func NewCrud(container *services.ServiceContainer) ICRUD {
+	return &crud{
+		container: container,
+	}
 }
 
 // @ref: https://stackoverflow.com/a/51069900
@@ -58,7 +62,7 @@ func (crud *crud) CreateShortUrl(ctx *gin.Context) {
 	}
 
 	// insert entry
-	id, err := services.Container.Shortener.Create(payload.FullUrl)
+	id, err := crud.container.Shortener.Create(payload.FullUrl)
 
 	if err != nil {
 		log.Println(err)
@@ -77,7 +81,7 @@ func (crud *crud) RedirectToFullUrl(ctx *gin.Context) {
 	}
 
 	// find full URL
-	result, err := services.Container.Shortener.ResolveUrl(id)
+	result, err := crud.container.Shortener.ResolveUrl(id)
 
 	if err != nil {
 		fmt.Println(err)
@@ -98,7 +102,7 @@ func (crud *crud) DeleteUrl(ctx *gin.Context) {
 	}
 
 	// find full URL
-	deletedCount, err := services.Container.Shortener.DeleteUrl(id)
+	deletedCount, err := crud.container.Shortener.DeleteUrl(id)
 
 	if err != nil || *deletedCount == 0 {
 		fmt.Println(err)
@@ -116,7 +120,7 @@ func (crud *crud) GetAnalytics(ctx *gin.Context) {
 		return
 	}
 
-	analytics, err := services.Container.Shortener.AccessCount(id)
+	analytics, err := crud.container.Shortener.AccessCount(id)
 
 	if err != nil {
 		fmt.Println(err)

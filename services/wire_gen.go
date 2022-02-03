@@ -35,8 +35,10 @@ var containerOnce sync.Once
 
 var Container *ServiceContainer
 
-func RegisterServiceContainer() {
+func RegisterServiceContainer() *ServiceContainer {
 	containerOnce.Do(func() {
 		Container = dependencyInjection()
 	})
+
+	return Container
 }
